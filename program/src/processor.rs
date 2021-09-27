@@ -11,7 +11,7 @@ use solana_program::{
 
 use spl_token::state::Account as TokenAccount;
 
-use crate::{error::EscrowError, instruction::EscrowInstruction, state::Escrow};
+use crate::{error::GPTError, instruction::EscrowInstruction, state::Escrow};
 
 pub struct Processor;
 impl Processor {
@@ -57,7 +57,7 @@ impl Processor {
         let rent = &Rent::from_account_info(next_account_info(account_info_iter)?)?;
 
         if !rent.is_exempt(escrow_account.lamports(), escrow_account.data_len()) {
-            return Err(EscrowError::NotRentExempt.into());
+            return Err(GPTError::NotRentExempt.into());
         }
 
         let mut escrow_info = Escrow::unpack_unchecked(&escrow_account.data.borrow())?;
@@ -119,7 +119,7 @@ impl Processor {
         let (pda, nonce) = Pubkey::find_program_address(&[b"escrow"], program_id);
 
         if amount_expected_by_taker != pdas_temp_token_account_info.amount {
-            return Err(EscrowError::ExpectedAmountMismatch.into());
+            return Err(GPTError::ExpectedAmountMismatch.into());
         }
 
         let initializers_main_account = next_account_info(account_info_iter)?;
@@ -208,7 +208,7 @@ impl Processor {
         **initializers_main_account.lamports.borrow_mut() = initializers_main_account
             .lamports()
             .checked_add(escrow_account.lamports())
-            .ok_or(EscrowError::AmountOverflow)?;
+            .ok_or(GPTError::AmountOverflow)?;
         **escrow_account.lamports.borrow_mut() = 0;
         *escrow_account.data.borrow_mut() = &mut [];
 

@@ -1,27 +1,31 @@
+use borsh::{BorshDeserialize, BorshSerialize};
 use solana_program::program_error::ProgramError;
 use std::convert::TryInto;
 
-use crate::error::EscrowError::InvalidInstruction;
+use crate::error::GPTError::InvalidInstruction;
 
-pub enum EscrowInstruction {
-    /// Starts the trade by creating and populating an escrow account and transferring ownership of the given temp token account to the PDA
-    ///
-    ///
+#[derive(BorshSerialize, BorshDeserialize, Debug)]
+#[repr(u8)]
+pub enum BetType {
+    SolUsd = 0,
+    // others
+}
+
+
+// TODO: prova a vedere se puoi implementare la serializzazione con Borsh trasformando l'enum e strutture in or
+
+#[derive(BorshSerialize, BorshDeserialize, Debug)]
+pub enum GPTInstruction {
     /// Accounts expected:
     ///
-    /// 0. `[signer]` The account of the person initializing the escrow
-    /// 1. `[writable]` Temporary token account that should be created prior to this instruction and owned by the initializer
-    /// 2. `[]` The initializer's token account for the token they will receive should the trade go through
-    /// 3. `[writable]` The escrow account, it will hold all necessary info about the trade.
-    /// 4. `[]` The rent sysvar
-    /// 5. `[]` The token program
-    InitEscrow {
-        /// The amount party A expects to receive of token Y
-        amount: u64,
+    /// 0. `[signer]` The wagerer account
+    /// 1. `[]` The system program 0x11111111111111111111111111111111
+    NewBet {
+        bet_type: BetType,
+        bump_seed: u8,
+        guess: u64,
     },
-    /// Accepts a trade
-    ///
-    ///
+
     /// Accounts expected:
     ///
     /// 0. `[signer]` The account of the person taking the trade
@@ -39,13 +43,13 @@ pub enum EscrowInstruction {
     },
 }
 
-impl EscrowInstruction {
-    /// Unpacks a byte buffer into a [EscrowInstruction](enum.EscrowInstruction.html).
+impl GPTInstruction {
+    /// Unpacks a byte buffer into a GPTInstruction
     pub fn unpack(input: &[u8]) -> Result<Self, ProgramError> {
         let (tag, rest) = input.split_first().ok_or(InvalidInstruction)?;
 
         Ok(match tag {
-            0 => Self::InitEscrow {
+            0 => Self::NewBet {
                 amount: Self::unpack_amount(rest)?,
             },
             1 => Self::Exchange {
