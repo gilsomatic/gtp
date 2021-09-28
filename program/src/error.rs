@@ -8,6 +8,16 @@ pub enum GPTError {
     InvalidInstruction,
     #[error("Invalid Bet Type")]
     InvalidBetType,
+    #[error("Bet Is Close")]
+    BetIsClose,
+    #[error("Invalid PDA Account")]
+    InvalidPDAAccount,
+    #[error("Account Is Not Rent Exempt")]
+    NotRentExempt,
+    #[error("Bet Lamports Are Not Enough")]
+    BetLamportNotEnough,
+    #[error("The Bet Account Contains Data")]
+    BetAccountContainsData,
 }
 
 impl From<GPTError> for ProgramError {

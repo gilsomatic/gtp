@@ -3,11 +3,11 @@ use solana_program::{
     program_pack::{Pack, Sealed},
     pubkey::Pubkey,
 };
-
 use crate::{error::GPTError};
-
+use num_derive::FromPrimitive;    
 use arrayref::{array_mut_ref, array_ref, array_refs, mut_array_refs};
 
+#[derive(FromPrimitive, Debug, Clone, Copy)]
 #[repr(u8)]
 pub enum BetType {
     SolUsd = 0,
@@ -78,13 +78,14 @@ pub struct BetAccount {
     pub bet_type: BetType, // 1
     pub guess: u64, // 8
     pub time_slot: u64, // 8
-    pub next_bet_pubkey: Pubkey, // 32 
+    pub next_bet_pubkey: Pubkey, // 32
+    pub bettor_pubkey: Pubkey, // 32
 }
 
 impl Sealed for BetAccount {}
 
 impl Pack for BetAccount {
-    const LEN: usize = 49; // 1 + 8 + 8 + 32 
+    const LEN: usize = 81; // 1 + 8 + 8 + 32 + 32
     fn unpack_from_slice(src: &[u8]) -> Result<Self, ProgramError> {
         let src = array_ref![src, 0, BetAccount::LEN];
         let (
@@ -92,7 +93,8 @@ impl Pack for BetAccount {
             guess,
             time_slot,
             next_bet,
-        ) = array_refs![src, 1, 8, 8, 32];
+            bettor,
+        ) = array_refs![src, 1, 8, 8, 32, 32];
         let bet_type = match bet_type {
             [0] => BetType::SolUsd,
             _ => return Err(GPTError::InvalidBetType.into()),
@@ -103,6 +105,7 @@ impl Pack for BetAccount {
             guess: u64::from_le_bytes(*guess),
             time_slot: u64::from_le_bytes(*time_slot),
             next_bet_pubkey: Pubkey::new_from_array(*next_bet),
+            bettor_pubkey: Pubkey::new_from_array(*bettor),
         })
     }
 
@@ -113,18 +116,21 @@ impl Pack for BetAccount {
             guess_dst,
             time_slot_dst,
             next_bet_dst,
-        ) = mut_array_refs![dst, 1, 8, 8, 32];
+            bettor_dst,
+        ) = mut_array_refs![dst, 1, 8, 8, 32, 32];
 
         let BetAccount {
             bet_type,
             guess,
             time_slot,
             next_bet_pubkey,
+            bettor_pubkey,
         } = self;
 
         bet_type_dst[0] = *bet_type as u8;
         *guess_dst = guess.to_le_bytes();
         *time_slot_dst = time_slot.to_le_bytes();
         next_bet_dst.copy_from_slice(next_bet_pubkey.as_ref());
+        bettor_dst.copy_from_slice(bettor_pubkey.as_ref());
     }
 }
