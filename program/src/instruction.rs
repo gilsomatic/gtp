@@ -6,9 +6,9 @@ use std::convert::TryInto;
 pub enum GPTInstruction {
     /// Accounts expected:
     ///
-    /// 0. `[signer]` The wagerer account
+    /// 0. `[signer]` The bettor account
     /// 1. `[writable]` The PDA account for the bet type
-    /// 2. `[writable]` The bet account of the wagerer
+    /// 2. `[writable]` The bet account of the bettor
     /// 3. `[]` The system program
     NewBet {
         bet_type: BetType,
